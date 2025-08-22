@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>테스트 폼</title>
+</head>
+<body>
+    <h1>간단한 테스트 폼</h1>
+    <form action="/evaluate" method="post" enctype="multipart/form-data">
+        <div>
+            <label>주제:</label>
+            <input type="text" name="topic" value="테스트 주제" required>
+        </div>
+        <div>
+            <label>프롬프트:</label>
+            <textarea name="prompt" required>테스트 프롬프트</textarea>
+        </div>
+        <div>
+            <label>이미지:</label>
+            <input type="file" name="images" multiple required accept="image/*">
+        </div>
+        <div>
+            <label>기준 이미지:</label>
+            <input type="text" name="ref_image" placeholder="기준 이미지 파일명">
+        </div>
+        <button type="submit">평가 시작</button>
+    </form>
+</body>
+</html>
+

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>AIM: 평가 결과</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="results-header">
+            <h1>평가 결과</h1>
+            <div class="reference-image-container">
+                <h3>기준 이미지: {{ ref_image_name }}</h3>
+                <img src="{{ ref_image_url }}" alt="기준 이미지: {{ ref_image_name }}" class="reference-image">
+            </div>
+        </div>
+
+        <div class="results-grid">
+            {% for result in results %}
+            <div class="result-card">
+                <div class="card-image-container">
+                    <img src="{{ result.url }}" alt="평가 이미지: {{ result.filename }}">
+                </div>
+                <div class="card-content">
+                    <h4>{{ result.filename }}</h4>
+                    <div class="score-details">
+                        <p><strong>최종 점수: {{ "%.2f"|format(result.final_score) }}</strong></p>
+                        {% if result.is_reference %}
+                        <p class="reference-badge"><strong>🎯 기준 이미지</strong></p>
+                        {% endif %}
+                        <ul>
+                            <li>CLIP: {{ "%.4f"|format(result.clip_score) }} (Norm: {{ "%.2f"|format(result.clip_norm) }})</li>
+                            <li>BLIP2: {{ "%.4f"|format(result.blip2_similarity) }} (Norm: {{ "%.2f"|format(result.blip2_norm) }})</li>
+                            <li>LPIPS: 
+                                {% if result.lpips_score is none %}
+                                    - (Norm: -)
+                                {% else %}
+                                    {{ "%.4f"|format(result.lpips_score) }} (Norm: {{ "%.2f"|format(result.lpips_norm) }})
+                                {% endif %}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="btn-container">
+            {% if csv_filename %}
+            <a href="{{ url_for('download_file', filename=csv_filename) }}" class="btn">CSV 다운로드</a>
+            {% endif %}
+            <a href="/" class="btn">새로운 평가 시작</a>
+        </div>
+    </div>
+</body>
+</html>

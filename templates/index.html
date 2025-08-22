@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>AIM: AI 이미지 평가 시스템</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>AIM: AI 이미지 평가 시스템</h1>
+        <form action="/evaluate" method="post" enctype="multipart/form-data" id="eval-form">
+            <div class="form-group">
+                <label for="topic">주제 (Topic)</label>
+                <input type="text" id="topic" name="topic" placeholder="예: '미래 도시의 풍경'" required>
+            </div>
+            <div class="form-group">
+                <label for="prompt">상세 프롬프트 (Prompt)</label>
+                <textarea id="prompt" name="prompt" rows="4" placeholder="예: '사이버펑크 스타일의 도시, 네온 불빛과 비행 자동차'" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="images">평가할 이미지 (Select Images)</label>
+                <input type="file" id="images" name="images" multiple required class="hidden-file-input" accept="image/*">
+                <div class="image-preview-container" id="image-preview-container">
+                    <div class="add-image-btn" onclick="document.getElementById('images').click()">
+                        +
+                    </div>
+                </div>
+                <div class="reference-selection-info" id="reference-info" style="display: none;">
+                    이미지를 클릭하여 기준 이미지로 선택하세요. 선택된 기준 이미지는 파란색 테두리로 표시됩니다.
+                </div>
+                <input type="hidden" id="ref_image" name="ref_image">
+            </div>
+            <button type="submit">평가 시작</button>
+        </form>
+    </div>
+    <script>
+        let selectedFiles = [];
+        let selectedReferenceImage = null;
+
+        // 파일 선택 이벤트 핸들러
+        document.getElementById('images').addEventListener('change', function(event) {
+            const newFiles = Array.from(event.target.files);
+            selectedFiles = selectedFiles.concat(newFiles);
+            updateImagePreview();
+            // 파일 input 초기화 (같은 파일을 다시 선택할 수 있도록)
+            event.target.value = '';
+        });
+
+        // 이미지 미리보기 업데이트
+        function updateImagePreview() {
+            const container = document.getElementById('image-preview-container');
+            const referenceInfo = document.getElementById('reference-info');
+            
+            // 기존 미리보기 제거 (add 버튼 제외)
+            const existingPreviews = container.querySelectorAll('.image-preview-item');
+            existingPreviews.forEach(preview => preview.remove());
+
+            // 새 미리보기 추가
+            selectedFiles.forEach((file, index) => {
+                const previewItem = createImagePreview(file, index);
+                container.insertBefore(previewItem, container.lastElementChild);
+            });
+
+            // 참조 정보 표시 여부 결정
+            if (selectedFiles.length > 1) {
+                referenceInfo.style.display = 'block';
+                // 첫 번째 이미지를 기본 기준 이미지로 설정
+                if (!selectedReferenceImage && selectedFiles.length > 0) {
+                    selectReferenceImage(0);
+                }
+            } else if (selectedFiles.length === 1) {
+                referenceInfo.style.display = 'none';
+                selectReferenceImage(0);
+            } else {
+                referenceInfo.style.display = 'none';
+                selectedReferenceImage = null;
+                document.getElementById('ref_image').value = '';
+            }
+        }
+
+        // 이미지 미리보기 요소 생성
+        function createImagePreview(file, index) {
+            const previewItem = document.createElement('div');
+            previewItem.className = 'image-preview-item';
+            previewItem.setAttribute('data-index', index);
+
+            // 이미지 요소
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(file);
+            img.alt = file.name;
+
+            // 파일명 표시
+            const filename = document.createElement('div');
+            filename.className = 'filename';
+            filename.textContent = file.name;
+
+            // 삭제 버튼
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.innerHTML = '×';
+            deleteBtn.type = 'button';
+            deleteBtn.onclick = (e) => {
+                e.stopPropagation();
+                removeImage(index);
+            };
+
+            // 클릭 이벤트 (기준 이미지 선택)
+            previewItem.onclick = () => selectReferenceImage(index);
+
+            previewItem.appendChild(img);
+            previewItem.appendChild(filename);
+            previewItem.appendChild(deleteBtn);
+
+            return previewItem;
+        }
+
+        // 이미지 제거
+        function removeImage(index) {
+            selectedFiles.splice(index, 1);
+            
+            // 기준 이미지가 제거된 경우 처리
+            if (selectedReferenceImage === index) {
+                selectedReferenceImage = selectedFiles.length > 0 ? 0 : null;
+            } else if (selectedReferenceImage > index) {
+                selectedReferenceImage--;
+            }
+            
+            updateImagePreview();
+        }
+
+        // 기준 이미지 선택
+        function selectReferenceImage(index) {
+            selectedReferenceImage = index;
+            
+            // 모든 이미지에서 selected 클래스 제거
+            const allPreviews = document.querySelectorAll('.image-preview-item');
+            allPreviews.forEach(preview => {
+                preview.classList.remove('selected');
+                const indicator = preview.querySelector('.selected-indicator');
+                if (indicator) indicator.remove();
+            });
+
+            // 선택된 이미지에 selected 클래스 추가
+            const selectedPreview = document.querySelector(`[data-index="${index}"]`);
+            if (selectedPreview) {
+                selectedPreview.classList.add('selected');
+                
+                // 기준 이미지 표시
+                const indicator = document.createElement('div');
+                indicator.className = 'selected-indicator';
+                indicator.textContent = '기준';
+                selectedPreview.appendChild(indicator);
+            }
+
+            // 히든 필드에 기준 이미지 설정
+            if (selectedFiles[index]) {
+                document.getElementById('ref_image').value = selectedFiles[index].name;
+            }
+        }
+
+        // 폼 제출 시 파일 데이터 설정
+        document.getElementById('eval-form').addEventListener('submit', function(e) {
+            if (selectedFiles.length === 0) {
+                e.preventDefault();
+                alert('최소 하나의 이미지를 선택해주세요.');
+                return;
+            }
+
+            // 로딩 화면 표시
+            showLoadingScreen();
+
+            // FormData를 사용한 제출
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('topic', document.getElementById('topic').value);
+            formData.append('prompt', document.getElementById('prompt').value);
+            formData.append('ref_image', document.getElementById('ref_image').value);
+            
+            selectedFiles.forEach(file => {
+                formData.append('images', file);
+            });
+            
+            fetch('/evaluate', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.text();
+                } else {
+                    throw new Error('평가 처리 중 오류가 발생했습니다.');
+                }
+            })
+            .then(html => {
+                document.open();
+                document.write(html);
+                document.close();
+            })
+            .catch(error => {
+                hideLoadingScreen();
+                alert('오류: ' + error.message);
+                console.error('Error:', error);
+            });
+        });
+
+        // 추가 파일 선택 버튼
+        function addMoreImages() {
+            document.getElementById('images').click();
+        }
+
+        // 로딩 화면 표시/숨김 기능
+        function showLoadingScreen() {
+            const loadingOverlay = document.createElement('div');
+            loadingOverlay.id = 'loading-overlay';
+            loadingOverlay.innerHTML = `
+                <div class="loading-content">
+                    <div class="loading-spinner"></div>
+                    <h3>AI 이미지 평가 진행 중...</h3>
+                    <p>이미지 분석 및 점수 계산 중입니다.</p>
+                    <div class="loading-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill"></div>
+                        </div>
+                        <p class="progress-text">잠시만 기다려주세요...</p>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(loadingOverlay);
+            
+            // 프로그레스 바 애니메이션
+            setTimeout(() => {
+                const progressFill = document.querySelector('.progress-fill');
+                if (progressFill) {
+                    progressFill.style.width = '90%';
+                }
+            }, 1000);
+        }
+
+        function hideLoadingScreen() {
+            const loadingOverlay = document.getElementById('loading-overlay');
+            if (loadingOverlay) {
+                loadingOverlay.remove();
+            }
+        }
+    </script>
+</body>
+</html>
