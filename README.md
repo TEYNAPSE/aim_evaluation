@@ -1,11 +1,130 @@
-# 평가 시스템 개요
+# AIM (AI Image Evaluator)
+
+## 목차
+- [평가 시스템 개요](#평가-시스템-개요)
+- [설치 및 실행](#설치-및-실행)
+  - [웹 애플리케이션 실행](#웹-애플리케이션-실행)
+  - [Jupyter Notebook 실행](#jupyter-notebook-실행)
+- [지표 설명](#지표-설명)
+- [구현 단계별 상세 안내](#구현-단계별-상세-안내)
+- [평가 프로세스 진행](#평가-프로세스-진행)
+- [구현 아키텍처](#구현-아키텍처)
+
+## 평가 시스템 개요
 이 평가 시스템은 생성된 이미지의 품질과 프롬프트와의 관련성을 객관적인 수치로 나타내는 것을 목표로 한다. 이를 위해 다음 세 가지 주요 지표를 사용하며, 각 지표를 정규화한 후 가중치를 적용하여 최종 점수를 계산한다. 
 
-1. 텍스트-이미지 의미 일치도 (CLIP Score): 입력된 상세 프롬프트(내용)와 생성된 이미지 간의 의미적 관련성을 평가한다. 
-2. 주제 의미 유사도 (BLIP2 Text Similarity): 생성된 이미지로부터 추출한 캡션과 핵심 프롬프트(주제) 간의 의미적 유사도를 평가한다. 
-3. 이미지 시각 품질 유사도 (LPIPS): 동일한 프롬프트 내에서 생성된 다른 이미지 또는 기준 이미지와의 시각적 일관성과 품질을 평가한다. 
+## 지표 설명
 
-# 구현 단계별 상세 안내
+1. **텍스트-이미지 의미 일치도 (CLIP Score)**: 입력된 상세 프롬프트(내용)와 생성된 이미지 간의 의미적 관련성을 평가한다. 
+2. **주제 의미 유사도 (BLIP2 Text Similarity)**: 생성된 이미지로부터 추출한 캡션과 핵심 프롬프트(주제) 간의 의미적 유사도를 평가한다. 
+3. **이미지 시각 품질 유사도 (LPIPS)**: 동일한 프롬프트 내에서 생성된 다른 이미지 또는 기준 이미지와의 시각적 일관성과 품질을 평가한다. 
+
+## 설치 및 실행
+
+### 필수 요구사항
+- Python 3.12 이상
+- uv (Python 패키지 관리자)
+- Hugging Face API 토큰
+
+### 환경 설정
+1. 리포지토리 클론
+```bash
+git clone <repository-url>
+cd aim
+```
+
+2. 환경 변수 설정
+`.env` 파일을 생성하고 Hugging Face API 토큰을 설정한다:
+```bash
+# .env 파일
+HUGGING_FACE_API=your_hugging_face_token_here
+# 또는
+HF_TOKEN=your_hugging_face_token_here
+```
+
+3. 종속성 설치
+```bash
+uv sync
+```
+
+### 웹 애플리케이션 실행
+Flask 기반 웹 인터페이스를 통해 이미지 평가를 수행할 수 있다:
+
+```bash
+uv run main.py
+```
+
+웹 브라우저에서 `http://localhost:5000`에 접속하여 사용한다.
+
+#### 웹 애플리케이션 사용법
+1. 주제(Topic)와 프롬프트(Prompt) 입력
+2. 평가할 이미지들 업로드 (PNG, JPG, JPEG, WebP, BMP 지원)
+3. LPIPS 비교 기준이 될 대표 이미지 선택
+4. 평가 실행 후 결과 확인
+
+### Jupyter Notebook 실행
+더 상세한 분석과 실험을 위해 Jupyter Notebook을 사용할 수 있다:
+
+#### 1. Jupyter 환경 설정
+```bash
+# Jupyter Lab 설치 및 실행
+uv run jupyter lab
+```
+
+#### 2. 사용 가능한 Notebook 파일들
+프로젝트에는 다음 Jupyter Notebook 파일들이 포함되어 있다:
+
+- `AIM_Evaluation 서현.ipynb`
+- `AIM_Evaluation 유비.ipynb` 
+- `AIM_Evaluation 재민.ipynb`
+- `AIM_Evaluation 재석.ipynb`
+
+#### 3. Notebook 사용법
+
+**Step 1: 환경 준비**
+```python
+# 환경 변수 로딩 및 경로 설정
+import os, sys
+from dotenv import load_dotenv, find_dotenv
+ROOT = os.path.dirname(os.path.dirname(os.getcwd())) if os.path.basename(os.getcwd())=='notebooks' else os.getcwd()
+if ROOT not in sys.path: sys.path.insert(0, ROOT)
+load_dotenv(find_dotenv())
+```
+
+**Step 2: 입력 데이터 준비**
+```python
+# 위젯을 통한 대화형 입력
+import ipywidgets as widgets
+from IPython.display import display
+
+# 주제 입력
+topic_w = widgets.Textarea(
+    value='A wooden cabin with a smoking chimney stands among snow-covered trees and a snowy mountain',
+    description='Topic',
+    layout=widgets.Layout(width='800px', height='80px')
+)
+
+# 프롬프트 입력
+prompt_w = widgets.Textarea(
+    value='Only one wooden cabin with one chimney, no other buildings or cabins, in a snowy forest with mountains',
+    description='Prompt',
+    layout=widgets.Layout(width='800px', height='80px')
+)
+
+# 이미지 업로드
+files_w = widgets.FileUpload(accept='image/*', multiple=True, description='Upload Images')
+```
+
+**Step 3: 평가 실행**
+업로드된 이미지들에 대해 자동으로 평가가 수행되며, 각 지표별 점수와 최종 점수가 표시된다.
+
+#### 4. Notebook의 장점
+- **대화형 분석**: 위젯을 통한 실시간 입력 및 결과 확인
+- **상세한 시각화**: 이미지 썸네일 프리뷰 및 평가 결과 시각화
+- **단계별 실행**: 각 평가 단계를 개별적으로 실행하고 결과 확인 가능
+- **커스터마이징**: 평가 파라미터 조정 및 실험 가능
+
+## 구현 단계별 상세 안내
 ## 1단계: 지표별 원시 점수(Raw Score) 계산
 1. 텍스트-이미지 의미 일치도 (CLIP Score) 계산
 목적: 프롬프트와 생성된 이미지 간의 의미적 일치도(코사인유사도)를 측정한다.
@@ -56,21 +175,32 @@ similarity < 0.7 이면: blip2_norm = similarity / 0.7
 최종 점수 계산식:
 Final Score=(clip_norm×0.2+lpips_norm×0.3+blip2_norm×0.5)×100
 
-# 평가 프로세스 진행
-1. Blip2에 들어갈 주제 텍스트, Clip score에 들어갈 프롬프트 텍스트, 입력
+## 평가 프로세스 진행
+1. Blip2에 들어갈 주제 텍스트, Clip score에 들어갈 프롬프트 텍스트 입력
 2. 평가할 이미지들 첨부
-3. 이미지 들 중 Lips score의 비교 대상으로 들어갈 대표 이미지 하나 선택 
-4. 각 이미지 별 평가 항목 점수 - 점수(정규화된 점수), 최종 점수 표로 정리해서 사용자 인터페이스에 표시
+3. 이미지들 중 LPIPS score의 비교 대상으로 들어갈 대표 이미지 하나 선택 
+4. 각 이미지별 평가 항목 점수 - 점수(정규화된 점수), 최종 점수 표로 정리해서 사용자 인터페이스에 표시
 
-# 구현 아키텍쳐
-- python
-- flask
-- transformers 
-- pytorch
+## 구현 아키텍처
+- **Python**: 3.12 이상
+- **Flask**: 웹 애플리케이션 프레임워크
+- **Transformers**: Hugging Face 모델 라이브러리 
+- **PyTorch**: 딥러닝 프레임워크
+- **Jupyter**: 대화형 분석 환경
+- **uv**: 패키지 관리자
 
-** hugging face API -> ./.env 의 HUGGING_FACE_API 변수로 저장 **  
+### 주요 의존성
+- `sentence-transformers`: 텍스트 임베딩
+- `lpips`: 이미지 시각적 유사도 측정
+- `pillow`: 이미지 처리
+- `python-dotenv`: 환경 변수 관리
 
-** 프로세스 실행 ** 
-``` bash 
-uv run main.py
-```
+## 라이선스
+MIT License
+
+## 기여하기
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
