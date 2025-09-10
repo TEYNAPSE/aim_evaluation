@@ -3,7 +3,6 @@
 ## 목차
 - [평가 시스템 개요](#평가-시스템-개요)
 - [설치 및 실행](#설치-및-실행)
-  - [웹 애플리케이션 실행](#웹-애플리케이션-실행)
   - [Jupyter Notebook 실행](#jupyter-notebook-실행)
 - [지표 설명](#지표-설명)
 - [구현 단계별 상세 안내](#구현-단계별-상세-안내)
@@ -46,21 +45,6 @@ HF_TOKEN=your_hugging_face_token_here
 ```bash
 uv sync
 ```
-
-### 웹 애플리케이션 실행
-Flask 기반 웹 인터페이스를 통해 이미지 평가를 수행할 수 있다:
-
-```bash
-uv run main.py
-```
-
-웹 브라우저에서 `http://localhost:5000`에 접속하여 사용한다.
-
-#### 웹 애플리케이션 사용법
-1. 주제(Topic)와 프롬프트(Prompt) 입력
-2. 평가할 이미지들 업로드 (PNG, JPG, JPEG, WebP, BMP 지원)
-3. LPIPS 비교 기준이 될 대표 이미지 선택
-4. 평가 실행 후 결과 확인
 
 ### Jupyter Notebook 실행
 더 상세한 분석과 실험을 위해 Jupyter Notebook을 사용할 수 있다:
@@ -183,7 +167,6 @@ Final Score=(clip_norm×0.2+lpips_norm×0.3+blip2_norm×0.5)×100
 
 ## 구현 아키텍처
 - **Python**: 3.12 이상
-- **Flask**: 웹 애플리케이션 프레임워크
 - **Transformers**: Hugging Face 모델 라이브러리 
 - **PyTorch**: 딥러닝 프레임워크
 - **Jupyter**: 대화형 분석 환경
