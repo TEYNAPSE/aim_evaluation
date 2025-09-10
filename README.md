@@ -55,15 +55,7 @@ uv sync
 uv run jupyter lab
 ```
 
-#### 2. 사용 가능한 Notebook 파일들
-프로젝트에는 다음 Jupyter Notebook 파일들이 포함되어 있다:
-
-- `AIM_Evaluation 서현.ipynb`
-- `AIM_Evaluation 유비.ipynb` 
-- `AIM_Evaluation 재민.ipynb`
-- `AIM_Evaluation 재석.ipynb`
-
-#### 3. Notebook 사용법
+#### 2. Notebook 사용법
 
 **Step 1: 환경 준비**
 ```python
